@@ -1,0 +1,947 @@
+var
+mouseSpeed: Integer = 50;
+
+Var
+  wall:Integer;
+
+var
+globalx: Integer = 0;
+var
+globaly: Integer = 0;
+var
+globaltries: Integer = 20;
+
+
+
+procedure humanWindMouse(xs, ys, xe, ye, gravity, wind, minWait, maxWait, targetArea: extended);
+var
+  veloX,veloY,windX,windY,veloMag,dist,randomDist,lastDist,D: extended;
+  lastX,lastY,MSP,W,TDist: integer;
+  T : LongWord;
+  sqrt2,sqrt3,sqrt5,maxStep,rCnc: extended;
+begin
+  MSP  := mouseSpeed;
+  sqrt2:= sqrt(2);
+  sqrt3:= sqrt(3);
+  sqrt5:= sqrt(5);
+
+  TDist := distance(round(xs), round(ys), round(xe), round(ye));
+  t := getSystemTime() + 10000;
+  repeat
+    if (getSystemTime() > t) then
+      break;
+
+    dist:= hypot(xs - xe, ys - ye);
+    wind:= minE(wind, dist);
+    if (dist < 1) then
+      dist := 1;
+
+    D := (round((round(TDist)*0.3))/7);
+    if (D > 25) then
+      D := 25;
+    if (D < 5) then
+      D := 5;
+
+    rCnc := random(6);
+    if (rCnc = 1) then
+      D := randomRange(2,3);
+
+    if (D <= round(dist)) then
+      maxStep := D
+    else
+      maxStep := round(dist);
+
+    if dist >= targetArea then
+    begin
+      windX:= windX / sqrt3 + (random(round(wind) * 2 + 1) - wind) / sqrt5;
+      windY:= windY / sqrt3 + (random(round(wind) * 2 + 1) - wind) / sqrt5;
+    end else
+    begin
+      windX:= windX / sqrt2;
+      windY:= windY / sqrt2;
+    end;
+
+    veloX:= veloX + windX;
+    veloY:= veloY + windY;
+    veloX:= veloX + gravity * (xe - xs) / dist;
+    veloY:= veloY + gravity * (ye - ys) / dist;
+
+    if (hypot(veloX, veloY) > maxStep) then
+    begin
+      randomDist:= maxStep / 2.0 + random(round(maxStep) div 2);
+      veloMag:= sqrt(veloX * veloX + veloY * veloY);
+      veloX:= (veloX / veloMag) * randomDist;
+      veloY:= (veloY / veloMag) * randomDist;
+    end;
+
+    lastX:= round(xs);
+    lastY:= round(ys);
+    xs:= xs + veloX;
+    ys:= ys + veloY;
+
+    if (lastX <> round(xs)) or (lastY <> round(ys)) then
+      moveMouse(round(xs), round(ys));
+
+    W := (random((round(100/MSP)))*6);
+    if (W < 5) then
+      W := 5;
+    W := round(W*0.9);
+    wait(W);
+    lastdist:= dist;
+  until(hypot(xs - xe, ys - ye) < 1)
+
+  if (round(xe) <> round(xs)) or (round(ye) <> round(ys)) then
+    moveMouse(round(xe), round(ye));
+
+  mouseSpeed := MSP;
+end;
+
+procedure brakeWindMouse(xs, ys, xe, ye, gravity, wind, minWait, maxWait,
+          targetArea: extended; double: boolean);
+var
+  veloX,veloY,windX,windY,veloMag,dist,randomDist,lastDist,D: extended;
+  lastX,lastY,MSP,W,TDist: integer;
+  T : LongWord;
+  sqrt2,sqrt3,sqrt5,PDist,maxStep,dModA,dModB,nModA,nModB: extended;
+begin
+  MSP  := mouseSpeed;
+  sqrt2:= sqrt(2);
+  sqrt3:= sqrt(3);
+  sqrt5:= sqrt(5);
+
+
+
+  TDist := distance(round(xs), round(ys), round(xe), round(ye));
+  if (TDist < 1) then
+    TDist := 1;
+
+  dModA := 0.88; //.80
+  dModB := 0.95; //.90
+
+  if (TDist > 220) then
+  begin
+    nModA := 0.08;
+    nModB := 0.04;
+  end else if (TDist <= 220) then
+  begin
+    nModA := 0.20;
+    nModB := 0.10;
+  end;
+
+  t := getSystemTime() + 5000;
+  repeat
+    if (getSystemTime() > t) then
+      break;
+
+    dist:= hypot(xs - xe, ys - ye);
+    wind:= minE(wind, dist);
+    if (dist < 1) then
+      dist := 1;
+    PDist := (dist/TDist);
+    if (PDist < 0.01) then
+      PDist := 0.01;
+
+    if double then
+    begin
+      if (PDist <= dModA) then
+      begin
+        D := (round((round(dist)*0.3))/5);
+        if (D < 20) then
+          D := 20;
+
+      end else if (PDist > dModA) then
+      begin
+        if (PDist < dModB) then
+          D := randomRange(5, 8)
+        else if (PDist >= dModB) then
+          D := randomRange(3, 4);
+      end;
+    end;
+
+    if (PDist >= nModA) then
+    begin
+       D := (round((round(dist)*0.3))/5);
+      if (D < 20) then
+        D := 20;
+    end else if (PDist < nModA) then
+    begin
+      if (PDist >= nModB) then
+        D := randomRange(5, 8)
+      else if (PDist < nModB) then
+        D := randomRange(3, 4);
+    end;
+
+    if (D <= round(dist)) then
+      maxStep := D
+    else
+      maxStep := round(dist);
+
+    if dist >= targetArea then
+    begin
+      windX:= windX / sqrt3 + (random(round(wind) * 2 + 1) - wind) / sqrt5;
+      windY:= windY / sqrt3 + (random(round(wind) * 2 + 1) - wind) / sqrt5;
+    end else
+    begin
+      windX:= windX / sqrt2;
+      windY:= windY / sqrt2;
+    end;
+
+    veloX:= veloX + windX;
+    veloY:= veloY + windY;
+    veloX:= veloX + gravity * (xe - xs) / dist;
+    veloY:= veloY + gravity * (ye - ys) / dist;
+
+    if (hypot(veloX, veloY) > maxStep) then
+    begin
+      randomDist:= maxStep / 2.0 + random(round(maxStep) div 2);
+      veloMag:= sqrt(veloX * veloX + veloY * veloY);
+      veloX:= (veloX / veloMag) * randomDist;
+      veloY:= (veloY / veloMag) * randomDist;
+    end;
+
+    lastX:= round(xs);
+    lastY:= round(ys);
+    xs:= xs + veloX;
+    ys:= ys + veloY;
+
+    if (lastX <> round(xs)) or (lastY <> round(ys)) then
+      moveMouse(round(xs), round(ys));
+
+    W := (random((round(100/MSP)))*6);
+    if (W < 5) then
+      W := 5;
+    if double then
+      if (PDist > dModA) then
+        W := round(W*2.5)
+    else
+      W := round(W*1.2);
+    wait(W);
+    lastdist:= dist;
+  until(hypot(xs - xe, ys - ye) < 1)
+
+  if (round(xe) <> round(xs)) or (round(ye) <> round(ys)) then
+    moveMouse(round(xe), round(ye));
+
+  mouseSpeed := MSP;
+end;
+
+(*
+ Mu is the mean, sigma is the standard deviation.
+*)
+procedure GaussWait(Mu,Sigma:Double; vmin:Double=30);
+var t,g:Double;
+begin
+  t := 2 * PI * Random();
+  g := mu + (sigma * Sqrt(-2 * Ln(Random()))) * Cos(t);
+  //WriteLn('Waiting: ', Round( MaxE(g,vmin) ),'ms');
+  Wait(Round(MaxE(g,vmin)));
+end;
+
+function randposition(Mu,Sigma,min,max:Double): Integer;
+var t,g:Double;
+begin
+  t := 2 * PI * Random();
+  g := mu + (sigma * Sqrt(-2 * Ln(Random()))) * Cos(t);
+
+  if (g<min) then
+    g := min;
+  if (g > max) then
+    g := max;
+
+  Result := Round(g);
+end;
+
+
+
+
+var startx, starty, endx, endy:integer;
+
+procedure cMousemove(xpos,ypos:integer);
+begin
+  endx := randposition(xpos,3.1,xpos-4*4,xpos+4*4);
+  endy := randposition(ypos,3.1,ypos-4*4,ypos+4*4);
+
+  GetMousePos(startx, starty);
+
+  //brakeWindMouse(startx, starty, endx, endy, randomRange(8,15), randomRange(1,8), randomRange(2,15),randomRange(10,20), 10.0,1);
+  brakeWindMouse(startx, starty, endx, endy, randomRange(8,20), randomRange(1,15), randomRange(2,10),randomRange(10,15), 10.0,1);
+  //wait(50);
+
+end;
+var q,w:integer;
+var sx,sy:integer;
+procedure cMouseMoveRock(xpos,ypos:integer);
+begin
+  endx := randposition(xpos,5,xpos-5*5,xpos+5*5);
+  endy := randposition(ypos,5,ypos-5*5,ypos+5*5);
+
+  GetMousePos(startx, starty);
+
+  //brakeWindMouse(startx, starty, endx, endy, randomRange(8,15), randomRange(1,8), randomRange(2,15),randomRange(10,20), 10.0,1);
+  brakeWindMouse(startx, starty, endx, endy, randomRange(8,20), randomRange(1,15), randomRange(2,10),randomRange(10,15), 10.0,1);
+  //wait(50);
+
+end;
+
+//var q,w:integer;
+//var sx,sy:integer;
+procedure cMouseMoveLadder(xpos,ypos:integer);
+begin
+  endx := randposition(xpos,2.1,xpos-3*3,xpos+3*3);
+  endy := randposition(ypos,2.1,ypos-3*3,ypos+3*3);
+
+  GetMousePos(startx, starty);
+
+  //brakeWindMouse(startx, starty, endx, endy, randomRange(8,15), randomRange(1,8), randomRange(2,15),randomRange(10,20), 10.0,1);
+  brakeWindMouse(startx, starty, endx, endy, randomRange(8,20), randomRange(1,15), randomRange(2,10),randomRange(10,15), 10.0,1);
+  //wait(50);
+
+end;
+
+var
+  fileName,Bot_SavePath,writestring,writestring2: string;
+  tmpFile: integer;
+
+function OpenReportFile(): integer;
+var
+  fileName,Bot_SavePath: string;
+begin
+
+  fileName := 'Test.txt'; // file name
+
+    if (fileExists(fileName)) then // checks if the file exists
+      result := appendFile(fileName)
+    else
+      result := createFile(fileName); // if it does not exist it creates it
+
+end;
+
+
+procedure writemousetofile(t1,t2:integer);
+begin
+  //  writeln('writing'); // writeln the text
+
+  tmpFile := OpenReportFile(); // refers to the function above and opens the file
+
+
+
+  writestring := 'click ';
+  writestring2 := tostring(t1)+','+toString(t2);
+
+  if (tmpFile >= 0) then
+     writeFileString(tmpFile, writestring+writestring2+#13#10); // writes the text and the time stamp
+
+      closeFile(tmpFile); // closes the file
+
+      //writeln('write done');
+
+end;
+
+
+var esc1:integer = 917;
+var esc2:integer = 357;
+var b1,b2,tempx,tempy:integer;
+procedure cMouseclick();
+begin
+
+  //if(FindColorTolerance(b1,b2,6913162  ,927, 354,927, 354,40)) then
+    //  begin
+      //  WriteLn('pressing esc');
+       // Keydown(27);
+        //Wait(50);
+    //    Keyup(27);
+      //  wait(200);
+
+    //  end;
+
+
+  GetMousePos(tempx, tempy);
+  writemousetofile(tempx,tempy);
+  HoldMouse(tempx, tempy, mouse_Left);
+  GaussWait(randomRange(52,155),50);
+  ReleaseMouse(tempx, tempy, mouse_Left);
+  WriteLn('clicked');
+
+end;
+
+//var q,w:integer;
+procedure cMouseclickRock();
+begin
+
+  //if(FindColorTolerance(b1,b2,6913162  ,927, 354,927, 354,40)) then
+    //  begin
+      //  WriteLn('pressing esc');
+       // Keydown(27);
+        //Wait(50);
+    //    Keyup(27);
+      //  wait(200);
+
+    //  end;
+
+
+  GetMousePos(tempx, tempy);
+  writemousetofile(tempx,tempy);
+  HoldMouse(tempx, tempy, mouse_Left);
+  GaussWait(randomRange(52,155),50);
+  ReleaseMouse(tempx, tempy, mouse_Left);
+  WriteLn('clicked');
+
+end;
+  var tempyyy:integer =  0;
+procedure cMouseBuildFast();
+begin
+      wait(randomRange(30,200));
+
+  GetMousePos(tempx, tempy);
+  writemousetofile(tempx,tempy);
+  HoldMouse(tempx, tempy, mouse_Right);
+  ReleaseMouse(tempx, tempy, mouse_Right);
+  WriteLn('clicked');
+
+  GetMousePos(tempx, tempy);
+
+  tempyyy := tempy+60;
+
+  brakeWindMouse(tempx, tempy, tempx, tempyyy, randomRange(8,20), randomRange(1,15), randomRange(2,10),randomRange(10,15), 10.0,1);
+       wait(randomRange(30,50));
+ cMouseclick();
+  //y + 60
+
+    GaussWait(randomRange(2000,2500),300);
+
+    keyDown(98);
+    wait(150);
+    keyUp(98);
+
+    GaussWait(randomRange(3000,4000),300);
+
+end;
+
+//var q,w:integer;
+procedure cMouseclickLadder();
+begin
+
+  //if(FindColorTolerance(b1,b2,6913162  ,927, 354,927, 354,40)) then
+    //  begin
+      //  WriteLn('pressing esc');
+       // Keydown(27);
+        //Wait(50);
+    //    Keyup(27);
+      //  wait(200);
+
+    //  end;
+
+
+  GetMousePos(tempx, tempy);
+  writemousetofile(tempx,tempy);
+  HoldMouse(tempx, tempy, mouse_Left);
+  GaussWait(randomRange(52,155),50);
+  ReleaseMouse(tempx, tempy, mouse_Left);
+  WriteLn('clicked');
+
+end;
+
+var finalx, finaly, fishfound,clickfishx,clickfishy,tempn,rocknumber,option: integer;
+procedure clickfish();
+begin
+
+if(rocknumber<1)then
+begin
+//////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveRock(365,267);
+    cMouseClickRock();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveRock(345,243);
+    cMouseClickRock();
+  end
+  else
+  begin
+    cMouseMoveRock(386,234);
+    cMouseClickRock();
+  end;
+  /////////////////////
+
+  rocknumber := 1;
+end
+else
+begin
+///////////////
+
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveRock(697,290);
+    cMouseClickRock();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveRock(725,248);
+    cMouseClickRock();
+  end
+  else
+  begin
+    cMouseMoveRock(747,275);
+    cMouseClickRock();
+  end;
+
+///////////////////
+
+  rockNumber := 0;
+end;
+end;
+
+
+
+
+var watercanx,watercany:integer;
+
+procedure waterkan();
+begin
+ WriteLn('if it see a red 0 in a water can refill');
+ //wait(100000);
+
+  ///////////////////////
+
+  ////water kan////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMove(581,528);
+    cMouseClick();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMove(589,522);
+    cMouseClick();
+  end
+  else
+  begin
+    cMouseMove(591,532);
+    cMouseClick();
+  end;
+
+           GaussWait(randomRange(400,400),100);
+     /////water barel////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMove(616,288);
+    cMouseClick();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMove(623,288);
+    cMouseClick();
+  end
+  else
+  begin
+    cMouseMove(618,293);
+    cMouseClick();
+  end;
+
+           GaussWait(randomRange(50000,50000),100);
+       ////tile to go bak/////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(192,455);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(196,454);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(198,458);
+    cMouseClickLadder();
+  end;
+
+           GaussWait(randomRange(4000,4000),100);
+  ///////////////////////////
+
+
+end;
+
+
+var pouchx,pouchy:integer;
+
+procedure bank();
+begin
+ WriteLn('getting more seeds and going bak to starting tile');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(263,691);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(266,687);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(270,692);
+    cMouseClickLadder();
+  end;
+
+           GaussWait(randomRange(7000,7000),100);
+
+                    ////
+          WriteLn('pressing 1,2, or 3 (49,50,51) bar');
+          Keydown(32);
+          GaussWait(randomRange(52,200),100);
+          Keyup(32);
+          wait(300);
+          ///
+
+                              ////
+          WriteLn('pressing 1,2, or 3 (49,50,51) bar');
+          Keydown(32);
+          GaussWait(randomRange(52,200),100);
+          Keyup(32);
+          wait(300);
+          ///
+
+                              ////
+          WriteLn('pressing 1,2, or 3 (49,50,51) bar');
+          Keydown(32);
+          GaussWait(randomRange(52,200),100);
+          Keyup(32);
+          wait(300);
+          ///
+
+
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(224,411);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(229,408);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(226,404);
+    cMouseClickLadder();
+  end;
+
+           GaussWait(randomRange(5000,5000),100);
+
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMove(337,304);
+    cMouseClick();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMove(342,304);
+    cMouseClick();
+  end
+  else
+  begin
+    cMouseMove(349,304);
+    cMouseClick();
+  end;
+
+           GaussWait(randomRange(3000,3000),100);
+
+                    ////
+          WriteLn('pressing 1,2, or 3 (49,50,51) bar');
+          Keydown(49);
+          GaussWait(randomRange(52,200),100);
+          Keyup(49);
+          wait(200);
+          ///
+
+                  GaussWait(randomRange(3000,3000),100);
+
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(429,406);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(430,400);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(430,395);
+    cMouseClickLadder();
+  end;
+
+           GaussWait(randomRange(3000,3000),100);
+
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(580,45);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(584,47);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(582,39);
+    cMouseClickLadder();
+  end;
+
+
+           GaussWait(randomRange(6000,6000),100);
+  ///////////////////////////
+
+
+end;
+
+
+var seedx,seedy:integer;
+
+procedure seed();
+begin
+ WriteLn('seed');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMove(584,455);
+    cMouseClick();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMove(581,452);
+    cMouseClick();
+  end
+  else
+  begin
+    cMouseMove(585,446);
+    cMouseClick();
+  end;
+  ///////////////////////////
+
+  rockNumber := 0;
+end;
+
+
+var waterleftx,waterlefty:integer;
+
+procedure waterleft();
+begin
+ WriteLn('water left');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveRock(327,367);
+    cMouseClickRock();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveRock(345,374);
+    cMouseClickRock();
+  end
+  else
+  begin
+    cMouseMoveRock(330,384);
+    cMouseClickRock();
+  end;
+
+  ///////////////////////////
+
+  rockNumber := 0;
+end;
+
+
+
+
+var waterrightx,waterrighty:integer;
+
+procedure waterright();
+begin
+ WriteLn('water');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveRock(463,376);
+    cMouseClickRock();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveRock(475,384);
+    cMouseClickRock();
+  end
+  else
+  begin
+    cMouseMoveRock(473,361);
+    cMouseClickRock();
+  end;
+  ///////////////////////////
+
+  rockNumber := 0;
+end;
+
+
+
+
+var testx,testy:integer;
+
+procedure walksouth();
+begin
+ WriteLn('walk south');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(359,459);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(366,460);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(362,452);
+    cMouseClickLadder();
+  end;
+  ///////////////////////////
+
+  rockNumber := 0;
+end;
+
+
+
+var walknorthx,walknorthy:integer;
+
+procedure walknorth();
+begin
+ WriteLn('walk north');
+ //wait(100000);
+
+
+  ///////////////////////
+option := randomRange(1,10000);
+  if(option<2000) then
+  begin
+    cMouseMoveLadder(381,48);
+    cMouseClickLadder();
+  end
+  else if(option<5000) then
+  begin
+    cMouseMoveLadder(385,47);
+    cMouseClickLadder();
+  end
+  else
+  begin
+    cMouseMoveLadder(387,43);
+    cMouseClickLadder();
+  end;
+  ///////////////////////////
+
+  rockNumber := 0;
+end;
+
+
+
+
+var dropx,dropy:integer;
+
+var x,y,counter,found,isfishing, fishtrynumber: integer;
+
+begin
+
+    repeat
+//////main script//////
+counter := 0 ;
+repeat
+
+counter := counter + 1   ;
+
+seed();
+           GaussWait(randomRange(200,200),100);
+waterleft();
+           GaussWait(randomRange(2500,2500),100);
+seed();
+           GaussWait(randomRange(200,200),100);
+waterright();
+           GaussWait(randomRange(2500,2500),100);
+walksouth();
+           GaussWait(randomRange(2500,2500),100);
+until (counter>3)    ;
+
+walknorth();
+
+           GaussWait(randomRange(12000,12000),100);
+
+counter := 0 ;
+found := 0 ;
+repeat
+counter := counter + 1   ;
+found := 0 ;
+repeat
+found := found + 1   ;
+waterleft();
+           GaussWait(randomRange(2500,2500),100);
+waterright();
+           GaussWait(randomRange(2500,2500),100);
+walksouth();
+           GaussWait(randomRange(2500,2500),100);
+until (found>3)    ;
+walknorth();
+           GaussWait(randomRange(12000,12000),100);
+until (counter>3)    ;
+////if we see a red water can we will run this procedure/////
+if(FindColorTolerance(x,y,255,565, 618, 575, 633,10)) then
+begin
+
+waterkan();
+
+end
+/////////
+           GaussWait(randomRange(500,500),100);
+//////main script end//////
+
+////end game banking of seeds looking for single digit seed count////
+if not(FindColorTolerance(x,y,65535,574, 435, 601, 454,10)) then
+begin
+
+bank();
+
+end;
+
+    until (1>2)
+end;
